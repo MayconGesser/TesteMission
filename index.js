@@ -21,12 +21,16 @@ function extrairNomeImagem(url_imagem){
 
 const requestHandler = (request, response) => {
 	//fonte: https://stackoverflow.com/questions/11944932/how-to-download-a-file-with-node-js-without-using-third-party-libraries
+	//fonte: https://stackoverflow.com/questions/18310990/nodejs-lost-data-when-using-loop-for-download-many-files
 	for(var i in JSON_imagens.images){
-		var nome_imagem = extrairNomeImagem(JSON_imagens.images[i]);
-		var imagem = fs.createWriteStream(nome_imagem);
-		var request = https.get(JSON_imagens.images[i],function(resposta){
-			resposta.pipe(imagem);
-		});
+		(function(i){
+			var nome_imagem = extrairNomeImagem(JSON_imagens.images[i]);
+			var imagem = fs.createWriteStream(nome_imagem);
+			var request = https.get(JSON_imagens.images[i],function(resposta){
+				resposta.pipe(imagem);
+			});
+			request.end();
+		})(i);
 	}
   response.end(JSON.stringify(JSON_imagens));
 }
