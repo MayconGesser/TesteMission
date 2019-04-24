@@ -1,6 +1,7 @@
 //fonte: https://blog.risingstack.com/your-first-node-js-http-server/
 
 const http = require('http')
+const https = require('https')
 const fs = require('fs')
 const port = 3000
 
@@ -11,7 +12,22 @@ fs.readFile('anexo_01.json','utf8',function(erro,conteudo){
 	JSON_imagens = JSON.parse(conteudo);
 })
 
+//TODO: um pouco instavel, tentar achar um jeito de 
+//fazer ficar mais future-proof
+function extrairNomeImagem(url_imagem){
+	var reg = new RegExp("[a-zA-Z0-9]{25}\\.(png|jpeg|jpg|ico)");
+	return reg.exec(url_imagem)[0];
+}
+
 const requestHandler = (request, response) => {
+	//fonte: https://stackoverflow.com/questions/11944932/how-to-download-a-file-with-node-js-without-using-third-party-libraries
+	for(var i in JSON_imagens.images){
+		var nome_imagem = extrairNomeImagem(JSON_imagens.images[i]);
+		var imagem = fs.createWriteStream(nome_imagem);
+		var request = https.get(JSON_imagens.images[i],function(resposta){
+			resposta.pipe(imagem);
+		});
+	}
   response.end(JSON.stringify(JSON_imagens));
 }
 
