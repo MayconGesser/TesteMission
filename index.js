@@ -3,8 +3,9 @@
 const http = require('http')
 const https = require('https')
 const fs = require('fs')
-//const JSZip = require('jszip')
+const JSZip = require('jszip')
 const path = require('path')
+const PNG = require('pngjs').PNG
 const port = 3000
 
 var JSON_imagens;
@@ -38,9 +39,33 @@ function baixarImagens(){
 	}
 }
 
+function comprimirImagens(erro,arquivos){
+	var zip = new JSZip();
+	for(var i in arquivos){
+		(function(i){
+			var nomeImagem = arquivos[i];
+			var caminhoImagem = path.join('images',nomeImagem);
+			var arquivoImagem = fs.readFileSync(caminhoImagem);
+			zip = zip.file(nomeImagem, arquivoImagem, {base64: true});
+		})(i);
+	}
+	zip.generateAsync({type:"nodebuffer"}, function(metadados){
+	}).then(function(conteudo){
+		fs.writeFile("./imagens.zip",conteudo,function(err){});
+	});
+}
+
 const requestHandler = (request, response) => {
+	//gambis, por enquanto
+	//fonte: https://stackoverflow.com/questions/15241819/node-js-executed-function-twice
+	if(request.url === '/favicon.ico'){
+		return;
+	}
 	//cria diretorio assincronizadamente
-	fs.mkdir('images', baixarImagens);
+	//fonte: https://nodejs.org/api/fs.html#fs_fs_mkdir_path_options_callback
+	fs.mkdir('images', {recursive: true}, baixarImagens);
+	fs.readdir('images',comprimirImagens);
+	console.log(request.url);
   response.end(JSON.stringify(JSON_imagens));
 }
 
