@@ -5,7 +5,9 @@ const https = require('https')
 const fs = require('fs')
 const JSZip = require('jszip')
 const path = require('path')
-const PNG = require('pngjs').PNG
+const express = require('express')
+const router = express.Router()
+const mime = require('mime')
 const port = 3000
 
 var JSON_imagens;
@@ -14,6 +16,12 @@ var JSON_imagens;
 fs.readFile('anexo_01.json','utf8',function(erro,conteudo){
 	JSON_imagens = JSON.parse(conteudo);
 })
+
+/*router.get('/download', (req, res, next) => {
+	let caminhoArquivo = 'imagens.zip';
+	console.log('dentro do router');
+	res.download(caminhoArquivo, caminhoArquivo);
+});*/
 
 //TODO: um pouco instavel, tentar achar um jeito de 
 //fazer ficar mais future-proof
@@ -61,11 +69,20 @@ const requestHandler = (request, response) => {
 	if(request.url === '/favicon.ico'){
 		return;
 	}
+	else if(request.url === '/download'){
+		let caminhoArq = 'imagens.zip';		
+		console.log('baixando arquivo');
+		let arquivo = fs.readFileSync(caminhoArq,'binary');
+		response.writeHead(200, {"Content-Type": mime.lookup(caminhoArq)});
+    response.write(arquivo, "binary");
+    response.end();
+    return;
+	}
+	console.log(request.url);
 	//cria diretorio assincronizadamente
 	//fonte: https://nodejs.org/api/fs.html#fs_fs_mkdir_path_options_callback
 	fs.mkdir('images', {recursive: true}, baixarImagens);
 	fs.readdir('images',comprimirImagens);
-	console.log(request.url);
   response.end(JSON.stringify(JSON_imagens));
 }
 
